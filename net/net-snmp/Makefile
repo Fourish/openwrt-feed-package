@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=net-snmp
 PKG_VERSION:=5.9.4
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/net-snmp
@@ -19,6 +19,9 @@ PKG_LICENSE:=MIT BSD-3-Clause-Clear
 PKG_CPE_ID:=cpe:/a:net-snmp:net-snmp
 
 PKG_FIXUP:=autoreconf
+PKG_CONFIG_DEPENDS:= \
+  CONFIG_NETSNMP_WITHOUT_OPENSSL \
+  CONFIG_NETSNMP_WITH_OPENSSL \
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -41,8 +44,13 @@ define Package/libnetsnmp
 $(call Package/net-snmp/Default)
   SECTION:=libs
   CATEGORY:=Libraries
-  DEPENDS:=+libnl-tiny +libpci +libpcre2
+  DEPENDS:=+libnl-tiny +libpci +libpcre2 +NETSNMP_WITH_OPENSSL:libopenssl
   TITLE:=Open source SNMP implementation (libraries)
+  MENU:=1
+endef
+
+define Package/net-snmp/config
+source "$(SOURCE)/Config.in"
 endef
 
 define Package/libnetsnmp/description
@@ -206,7 +214,6 @@ CONFIGURE_ARGS += \
 	--with-mib-modules="$(SNMP_MIB_MODULES_INCLUDED)" \
 	--with-out-transports="$(SNMP_TRANSPORTS_EXCLUDED)" \
 	--with-transports="$(SNMP_TRANSPORTS_INCLUDED)" \
-	--without-openssl \
 	--without-libwrap \
 	--without-mysql \
 	--without-rpm \
@@ -216,7 +223,8 @@ CONFIGURE_ARGS += \
 	 $(call autoconf_bool,CONFIG_IPV6,ipv6) \
 	--disable-perl-cc-checks \
 	--disable-embedded-perl \
-	--without-perl-modules
+	--without-perl-modules \
+	$(if $(CONFIG_NETSNMP_WITH_OPENSSL), --with-openssl="$(STAGING_DIR)/usr", --without-openssl)
 
 CONFIGURE_VARS += \
 	ac_cv_header_netlink_netlink_h=yes \
@@ -274,6 +282,9 @@ define Package/snmpd/install
 	$(INSTALL_BIN) ./files/snmpd.init $(1)/etc/init.d/snmpd
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/snmpd $(1)/usr/sbin/snmpd
+ifneq ($(CONFIG_NETSNMP_WITH_OPENSSL),n)
+	sed -i -e 's/CONFIG_NETSNMP_WITH_OPENSSL=n/CONFIG_NETSNMP_WITH_OPENSSL=y/g' $(1)/etc/init.d/snmpd
+endif
 endef
 
 define Package/snmptrapd/install

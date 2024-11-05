@@ -1,0 +1,15 @@
+if PACKAGE_libnetsnmp
+
+comment "SSL support"
+
+choice
+	prompt "Selected SSL library"
+	default NETSNMP_WITHOUT_OPENSSL
+
+	config NETSNMP_WITHOUT_OPENSSL
+		bool "Disable compilation with OPENSSL"
+
+	config NETSNMP_WITH_OPENSSL
+		bool "Enable compilation with OPENSSL"
+endchoice
+endif
