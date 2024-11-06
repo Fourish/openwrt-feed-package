@@ -263,7 +263,14 @@ snmpd_snmpv3_add() {
 	fi
 
 	if [ "$CONFIG_NETSNMP_WITH_OPENSSL" = "n" ]; then
+		uci set snmpd.general.openssl='0'
+		uci commit
 		return 0
+	fi
+
+	if [ "$CONFIG_NETSNMP_WITH_OPENSSL" = "y" ]; then
+		uci set snmpd.general.openssl='1'
+		uci commit
 	fi
 
 	config_get username "$cfg" username
